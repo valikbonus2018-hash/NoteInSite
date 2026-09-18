@@ -44,6 +44,8 @@
   let zTop = 10;
   let selfWrite = false;
   let saveTimer = null, inputTimer = null;
+  let dirty = false;                // есть несохранённые изменения
+  let saveRetry = 0, retryTimer = null, failToast = null;
   let lastPoint = null;             // последняя точка правого клика (координаты документа)
   let curHref = location.href;
   let savedRange = null, savedRangeNote = null;
@@ -67,7 +69,7 @@
     zTop = notes.reduce((m, n) => Math.max(m, n.z || 0), 10);
   }
 
-  function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveAll, 250); }
+  function scheduleSave() { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(saveAll, 250); }
 
   async function saveAll() {
     clearTimeout(saveTimer);
@@ -79,17 +81,78 @@
     if (p.length) set[pageKey()] = p; else del.push(pageKey());
     if (s.length) set[siteKey()] = s; else del.push(siteKey());
     selfWrite = true;
+    dirty = false;
     try {
       if (Object.keys(set).length) await chrome.storage.local.set(set);
       if (del.length) await chrome.storage.local.remove(del);
-    } catch (e) { /* страница выгружается / расширение перезагружено */ }
+      writeOk();
+    } catch (e) {
+      dirty = true;                   // записи не было — изменения всё ещё только в памяти
+      writeFailed(e);
+    }
     setTimeout(() => { selfWrite = false; }, 80);
   }
 
   async function saveSettings() {
     selfWrite = true;
-    try { await chrome.storage.local.set({ [SETTINGS_KEY]: settings }); } catch (e) {}
+    try { await chrome.storage.local.set({ [SETTINGS_KEY]: settings }); writeOk(); }
+    catch (e) { writeFailed(e, true); }
     setTimeout(() => { selfWrite = false; }, 80);
+  }
+
+  /* ---------------- неудачная запись ---------------- */
+  /* Раньше здесь стоял пустой catch: заметка не сохранялась, а пользователь узнавал
+     об этом, только открыв страницу заново. Теперь о неудаче говорим вслух и пробуем
+     ещё раз — разовый сбой переживём молча, постоянный покажем. */
+  const RETRY_DELAYS = [1500, 5000, 15000];
+
+  /* Расширение обновили, выключили или переустановили: эта страница с ним больше
+     не связана, и записывать в хранилище ей уже нечем — поможет только перезагрузка. */
+  function storageGone() {
+    try { return !(chrome.runtime && chrome.runtime.id); } catch (e) { return true; }
+  }
+
+  function writeErrorText(err) {
+    const msg = String((err && err.message) || err || '');
+    if (storageGone() || /context invalidated|Extension context/i.test(msg))
+      return 'Расширение было обновлено или перезапущено — правки этой страницы больше не сохраняются. ' +
+             'Обновите страницу (F5): заметки, сохранённые раньше, на месте.';
+    if (/quota|exceeded|QUOTA_BYTES/i.test(msg))
+      return 'В хранилище закончилось место — заметка не сохранена. Откройте окно расширения, ' +
+             'сделайте «Экспорт всех» и удалите ненужные заметки.';
+    return 'Не удалось сохранить заметки: ' + (msg || 'неизвестная ошибка') +
+           '. Пробую ещё раз; если сообщение повторится — сделайте экспорт из окна расширения.';
+  }
+
+  function writeOk() {
+    clearTimeout(retryTimer);
+    saveRetry = 0;
+    if (failToast) {                  // было сообщение о неудаче — снимаем и успокаиваем
+      failToast.remove();
+      failToast = null;
+      toast('Заметки сохранены');
+    }
+  }
+
+  function writeFailed(err, noRetry) {
+    if (failToast) failToast.remove();
+    failToast = toast(writeErrorText(err), 'error');
+    if (noRetry || storageGone()) return;        // повторять нечем и незачем
+    if (saveRetry >= RETRY_DELAYS.length) return;
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(saveAll, RETRY_DELAYS[saveRetry++]);
+  }
+
+  /* Правка уходит в хранилище с задержкой (400 мс на разбор текста плюс 250 мс
+     на запись). Если вкладку закрыть в этот промежуток, последние набранные символы
+     пропадали — поэтому при скрытии страницы дописываем немедленно. */
+  function flushSave() {
+    clearTimeout(inputTimer);
+    for (const n of notes) {
+      const el = els.get(n.id);
+      if (el && isEditing(el)) commitBody(n, el);
+    }
+    if (dirty) saveAll();
   }
 
   const siteDisabled = () => (settings.disabledSites || []).includes(location.hostname);
@@ -1570,13 +1633,22 @@
   }
 
   /* ---------------- вспомогательное ---------------- */
-  function toast(text) {
+  /* kind === 'error' — сообщение о несохранённых данных: само не исчезает,
+     потому что за 2,7 секунды его можно не заметить, а речь о потере заметки.
+     Убирается кликом или следующей удачной записью. */
+  function toast(text, kind) {
     ensureHost();
     const t = document.createElement('div');
-    t.className = 'nis-toast';
+    t.className = kind === 'error' ? 'nis-toast nis-toast-err' : 'nis-toast';
     t.textContent = text;
     shadow.appendChild(t);
-    setTimeout(() => t.remove(), 2700);
+    if (kind === 'error') {
+      t.title = 'Нажмите, чтобы скрыть';
+      t.addEventListener('click', () => { t.remove(); if (failToast === t) failToast = null; });
+    } else {
+      setTimeout(() => t.remove(), 2700);
+    }
+    return t;
   }
 
   /* собственное подтверждение: window.confirm сайт может переопределить */
@@ -1695,6 +1767,10 @@
     rsTimer = setTimeout(repositionAll, 150);   // и ещё раз, когда вёрстка устаканилась
   });
   window.addEventListener('load', () => setTimeout(repositionAll, 300));
+
+  // вкладку закрывают или уводят в фон — дописываем то, что ещё не успело уйти в хранилище
+  window.addEventListener('pagehide', flushSave);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
 
   // страница может дорисовываться (картинки, ленивая подгрузка) — держим заметки на своих местах
   if (window.ResizeObserver && document.body) {

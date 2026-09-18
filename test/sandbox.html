@@ -45,6 +45,7 @@ window.chrome = {
     onChanged: { addListener() {} }
   },
   runtime: {
+    id: 'nis-mock',                 // по нему content.js отличает «расширение ещё живо»
     lastError: undefined,
     onMessage: { addListener(fn) { window.__NIS_MSG = fn; } },
     sendMessage(msg, cb) { log('MSG→bg', JSON.stringify(msg)); cb && cb({ ok: true }); }

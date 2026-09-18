@@ -3,7 +3,7 @@
   "name": "NoteInSite — заметки на страницах",
   "version": "1.1.0",
   "description": "Заметки прямо в тексте любого сайта: вёрстка раздвигается под заметку, оформление, ссылки во всплывающих окнах.",
-  "permissions": ["storage", "contextMenus"],
+  "permissions": ["storage", "unlimitedStorage", "contextMenus"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background.js"

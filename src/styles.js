@@ -224,4 +224,15 @@ var NIS_CSS = `
   animation: nis-fade 2.6s ease forwards;
 }
 @keyframes nis-fade { 0%,85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Сообщение о том, что заметка не сохранилась. Не гаснет само и потому не
+   анимируется; текст в несколько строк, отсюда своя высота строки и ширина. */
+.nis-toast.nis-toast-err {
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 11px 16px; border-radius: 12px; text-align: left; cursor: pointer;
+  background: #8c1d18; box-shadow: 0 6px 22px rgba(20,24,33,.35);
+  font: 13px/1.4 system-ui, Arial, sans-serif;
+  animation: none; opacity: 1;
+}
+.nis-toast.nis-toast-err:hover { background: #7a1813; }
 `;

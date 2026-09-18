@@ -25,6 +25,7 @@ body {
 .card-title { font-weight: 600; font-size: 12px; color: #39404f; margin-bottom: 7px; cursor: default; }
 details.card summary.card-title { cursor: pointer; margin-bottom: 0; }
 details[open].card summary.card-title { margin-bottom: 8px; }
+.used { color: #8a92a4; font-weight: 400; }
 .badge {
   display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px;
   background: #eceff5; color: #4b5261; font-size: 11px; text-align: center;

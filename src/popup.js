@@ -204,13 +204,32 @@ function fillSettingsUI() {
 }
 
 async function saveSettings() {
-  await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+  try {
+    await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+  } catch (e) {
+    $('warn').hidden = false;
+    $('warn').textContent = 'Не удалось сохранить настройки: ' + (e && e.message ? e.message : e);
+  }
+}
+
+/* Размер, при котором стоит напомнить про резервную копию. Жёсткого предела
+   больше нет (в манифесте unlimitedStorage), но разросшееся хранилище — повод
+   сделать экспорт: место на диске всё-таки конечно. */
+const BIG_STORAGE = 8 * 1024 * 1024;
+
+function fmtSize(n) {
+  if (n < 1024) return n + ' Б';
+  if (n < 1024 * 1024) return Math.round(n / 1024) + ' КБ';
+  return (n / (1024 * 1024)).toFixed(1).replace('.', ',') + ' МБ';
 }
 
 async function updateTotals() {
   const all = await chrome.storage.local.get(null);
-  let total = 0, pages = 0;
+  let total = 0, pages = 0, size = 0;
   for (const k in all) {
+    if (!/^nis:/.test(k)) continue;
+    // так же размер считает и сам Chrome: длина ключа плюс длина JSON значения
+    size += k.length + JSON.stringify(all[k]).length;
     if (!/^nis:(page|site):/.test(k)) continue;
     const arr = all[k] || [];
     if (!arr.length) continue;
@@ -219,6 +238,14 @@ async function updateTotals() {
   }
   $('total').textContent = String(total);
   $('pages').textContent = String(pages);
+  $('used').textContent = size ? ' · ' + fmtSize(size) : '';
+
+  // не затираем уже показанное предупреждение — оно важнее напоминания о копии
+  if (size > BIG_STORAGE && $('warn').hidden) {
+    $('warn').hidden = false;
+    $('warn').textContent = 'Заметки занимают ' + fmtSize(size) +
+      '. Стоит сделать «Экспорт всех» — резервная копия пригодится.';
+  }
 }
 
 /* ---------- обработчики ---------- */
