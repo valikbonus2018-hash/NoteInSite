@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>NoteInSite sandbox</title>
+<style>
+  body { font: 16px/1.6 system-ui; margin: 0; }
+  header { background:#234; color:#fff; padding:14px 20px; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px; }
+  #article p { margin: 0 0 14px; }
+  .tall { height: 900px; background: repeating-linear-gradient(#fafafa,#fafafa 40px,#f0f0f0 40px,#f0f0f0 80px); }
+  #log { position: fixed; right: 8px; bottom: 8px; width: 320px; max-height: 220px; overflow:auto;
+         background:#111; color:#0f0; font:11px/1.35 monospace; padding:6px; z-index: 5; }
+</style>
+</head>
+<body>
+<header><h1>Тестовая страница</h1></header>
+<main>
+  <article id="article">
+    <p id="p1">Первый абзац текста для проверки привязки заметок к элементам страницы.</p>
+    <p>Второй абзац. Тут мы будем создавать стикер и проверять перетаскивание.</p>
+    <p>Третий абзац с длинным текстом, чтобы страница прокручивалась и можно было проверить позиционирование.</p>
+  </article>
+  <div class="tall"></div>
+</main>
+<pre id="log"></pre>
+<script>
+const log = (...a) => { const el = document.getElementById('log');
+  el.textContent += a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ') + '\n'; };
+window.onerror = (m, s, l, c, e) => log('ERROR:', m, '@' + l + ':' + c);
+const STORE = JSON.parse(localStorage.getItem('nis-mock') || '{}');
+const persist = () => localStorage.setItem('nis-mock', JSON.stringify(STORE));
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys === null || keys === undefined) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(obj) { Object.assign(STORE, JSON.parse(JSON.stringify(obj))); persist(); log('SET', Object.keys(obj).join(',')); return Promise.resolve(); },
+      remove(keys) { for (const k of [].concat(keys)) delete STORE[k]; persist(); return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: {
+    lastError: undefined,
+    onMessage: { addListener(fn) { window.__NIS_MSG = fn; } },
+    sendMessage(msg, cb) { log('MSG→bg', JSON.stringify(msg)); cb && cb({ ok: true }); }
+  }
+};
+window.dumpStore = () => JSON.parse(JSON.stringify(STORE));
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

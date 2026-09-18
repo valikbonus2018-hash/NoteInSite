@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Установка — NoteInSite</title>
+<meta name="description" content="Как установить расширение NoteInSite: из Chrome Web Store или вручную из архива в режиме разработчика. Требования, обновление и удаление.">
+<link rel="canonical" href="http://noteinsite.atmos.ho.ua/install.html">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/icon32.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Установка — NoteInSite">
+<meta property="og:description" content="Установка из Chrome Web Store или вручную из архива, требования, обновление и удаление.">
+<meta property="og:url" content="http://noteinsite.atmos.ho.ua/install.html">
+<meta property="og:image" content="http://noteinsite.atmos.ho.ua/assets/img/og-cover.png?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=3">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html"><img src="assets/img/icon48.png" alt="" width="28" height="28">NoteInSite</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Меню">☰</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="index.html">Главная</a>
+      <a href="features.html">Возможности</a>
+      <a href="help.html">Справка</a>
+      <a href="privacy.html">Конфиденциальность</a>
+      <a href="support.html">Поддержка</a>
+      <a class="btn btn-sm" href="install.html" aria-current="page">Установить</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="page-head">
+    <div class="container">
+      <span class="badge">Версия 1.1.0 · 39 КБ</span>
+      <h1 style="margin-top:14px">Установка</h1>
+      <p class="lead">Два способа: дождаться публикации в Chrome Web Store или поставить расширение вручную из архива уже сейчас.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:26px">
+    <div class="container">
+      <div class="grid grid-2 reveal">
+
+        <article class="card">
+          <div class="card-icon">🛒</div>
+          <h3>Из Chrome Web Store</h3>
+          <p class="muted">Расширение проходит публикацию. Когда карточка станет доступна, ссылка появится здесь.</p>
+          <p><a class="btn" href="#" aria-disabled="true">Скоро в Chrome Web Store</a></p>
+        </article>
+
+        <article class="card">
+          <div class="card-icon y">📦</div>
+          <h3>Вручную из архива</h3>
+          <p class="muted">Работает уже сейчас, занимает минуту. Порядок действий — ниже.</p>
+          <p><a class="btn" href="download/noteinsite-1.1.0.zip" download>Скачать noteinsite-1.1.0.zip</a></p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sunken">
+    <div class="container">
+      <div class="section-head">
+        <h2>Установка вручную</h2>
+        <p class="lead">Chrome называет это «режимом разработчика»: расширение ставится из папки на вашем компьютере.</p>
+      </div>
+
+      <div class="steps reveal" style="max-width:72ch">
+        <div class="step">
+          <div>
+            <h3>Скачайте и распакуйте архив</h3>
+            <p>Распакуйте <code>noteinsite-1.1.0.zip</code> в постоянную папку — например, <code>C:\Программы\NoteInSite</code>. Если папку удалить или переместить, расширение отключится.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3>Откройте страницу расширений</h3>
+            <p>Введите в адресной строке <code>chrome://extensions/</code> и нажмите <kbd>Enter</kbd>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3>Включите режим разработчика</h3>
+            <p>Переключатель «Режим разработчика» в правом верхнем углу страницы.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3>Загрузите распакованное расширение</h3>
+            <p>Кнопка «Загрузить распакованное расширение» → выберите папку, в которой лежит <code>manifest.json</code>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3>Обновите открытые вкладки</h3>
+            <p>Слой заметок подключается при загрузке страницы, поэтому вкладки, открытые до установки, нужно перезагрузить.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="max-width:72ch">
+        <p><strong>Chrome будет напоминать о расширениях в режиме разработчика</strong> при каждом запуске — это штатное предупреждение браузера для расширений, установленных не из магазина. После публикации в Chrome Web Store установку можно будет повторить оттуда, а ручную копию удалить.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="grid grid-3 reveal">
+        <article class="card">
+          <h3>Требования</h3>
+          <p>Chrome 88 и новее (Manifest V3). В браузерах на том же движке — Edge, Brave, Vivaldi, Opera — установка вручную выполняется так же. Firefox и Safari не поддерживаются.</p>
+        </article>
+        <article class="card">
+          <h3>Обновление</h3>
+          <p>Скачайте новый архив, распакуйте его поверх старой папки и нажмите «Обновить» на странице <code>chrome://extensions/</code>. Заметки при этом сохраняются.</p>
+        </article>
+        <article class="card">
+          <h3>Удаление</h3>
+          <p>Кнопка «Удалить» на странице расширений. Вместе с расширением стирается и его локальное хранилище — если заметки нужны, сделайте «Экспорт» заранее.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sunken">
+    <div class="container">
+      <div class="section-head center">
+        <h2>Что запрашивает расширение</h2>
+        <p class="lead">Три разрешения и ни одного лишнего. Подробности — в <a href="privacy.html">политике конфиденциальности</a>.</p>
+      </div>
+      <div class="table-wrap reveal">
+        <table>
+          <thead>
+            <tr><th>Разрешение</th><th>Зачем нужно</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>storage</code></td>
+              <td>Хранить сами заметки и настройки показа в браузере. Данные не покидают устройство.</td>
+            </tr>
+            <tr>
+              <td><code>contextMenus</code></td>
+              <td>Пункты «Добавить заметку здесь», «Показать / скрыть заметки» в контекстном меню страницы.</td>
+            </tr>
+            <tr>
+              <td><code>&lt;all_urls&gt;</code></td>
+              <td>Рисовать слой заметок на том сайте, который выбрали вы. Перечислить сайты заранее невозможно. Содержимое страниц не читается и никуда не передаётся.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="cta reveal">
+        <h2>Что-то пошло не так?</h2>
+        <p class="lead">Напишите — разберёмся.</p>
+        <div class="hero-actions">
+          <a class="btn btn-ghost" href="help.html">Справка и FAQ</a>
+          <a class="btn" href="support.html">Написать в поддержку</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="brand" href="index.html" style="margin-bottom:10px"><img src="assets/img/icon48.png" alt="" width="28" height="28">NoteInSite</a>
+        <p class="muted" style="max-width:36ch">Заметки прямо в тексте любых сайтов. Всё хранится локально, в вашем браузере.</p>
+      </div>
+      <div>
+        <h4>Расширение</h4>
+        <ul>
+          <li><a href="features.html">Возможности</a></li>
+          <li><a href="install.html">Установка</a></li>
+          <li><a href="help.html">Справка и FAQ</a></li>
+          <li><a href="changelog.html">История версий</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Документы</h4>
+        <ul>
+          <li><a href="privacy.html">Конфиденциальность</a></li>
+          <li><a href="terms.html">Условия использования</a></li>
+          <li><a href="support.html">Поддержка</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year>2026</span> NoteInSite</span>
+      <span>noteinsite.atmos.ho.ua</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js?v=3"></script>
+</body>
+</html>

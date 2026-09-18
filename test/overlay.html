@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Проверка: заметки и всплывающие окна сайта</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.6 system-ui, Arial, sans-serif; color: #1d2330; }
+  .head { position: fixed; top: 0; left: 0; right: 0; height: 70px; background: #23304a; color: #fff;
+          z-index: 10; display: flex; align-items: center; padding: 0 20px; }
+  main { max-width: 820px; margin: 0 auto; padding: 100px 24px 900px; }
+  p { margin: 0 0 14px; }
+  .relwrap { position: relative; z-index: 1; }        /* обычная обёртка контента — не оверлей */
+  .card { position: absolute; z-index: 300; width: 430px; background: #fff; border-radius: 8px;
+          box-shadow: 0 10px 40px rgba(0,0,0,.35); padding: 14px 16px; }
+  .card h4 { margin: 0 0 8px; }
+  #btn { padding: 8px 14px; }
+</style>
+</head>
+<body>
+<div class="head">Шапка сайта (fixed, z-index 10)</div>
+<main>
+  <div class="relwrap">
+    <p id="p1">Обычный текст статьи в обёртке с position: relative и z-index: 1 — заметка над ним
+       прятаться не должна.</p>
+    <p id="p2">Второй абзац статьи. Ниже кнопка, открывающая всплывающее окно сайта.</p>
+    <p><button id="btn">Открыть всплывающее окно сайта</button></p>
+    <p id="p3">Ещё абзац, чтобы было куда ставить заметки.</p>
+  </div>
+</main>
+
+<script>
+document.getElementById('btn').addEventListener('click', () => {
+  const old = document.getElementById('sitecard');
+  if (old) { old.remove(); return; }
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.id = 'sitecard';
+  const r = document.getElementById('btn').getBoundingClientRect();
+  c.style.left = (r.left + scrollX - 40) + 'px';
+  c.style.top = (r.bottom + scrollY - 190) + 'px';
+  c.innerHTML = '<h4>Ссылка на публикацию</h4><p>Всплывающее окно сайта. Заметки поверх него ' +
+                'висеть не должны.</p><p>Нажмите кнопку ещё раз, чтобы закрыть.</p>';
+  document.body.appendChild(c);
+});
+
+const STORE = JSON.parse(localStorage.getItem('nis-ov') || '{}');
+const persist = () => localStorage.setItem('nis-ov', JSON.stringify(STORE));
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys == null) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(o) { Object.assign(STORE, JSON.parse(JSON.stringify(o))); persist(); return Promise.resolve(); },
+      remove(k) { for (const x of [].concat(k)) delete STORE[x]; persist(); return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: { lastError: undefined, onMessage: { addListener(fn) { window.__NIS_MSG = fn; } }, sendMessage() {} }
+};
+window.dumpStore = () => JSON.parse(JSON.stringify(STORE));
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NoteInSite — заметки прямо в тексте сайтов</title>
+<meta name="description" content="Расширение для Chrome: заметка встаёт прямо в вёрстку страницы — текст раздвигается и обтекает её, ничего не перекрыто. Заметки хранятся только в вашем браузере и не уходят в сеть.">
+<link rel="canonical" href="http://noteinsite.atmos.ho.ua/">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/icon32.png">
+<link rel="apple-touch-icon" href="assets/img/icon128.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NoteInSite">
+<meta property="og:title" content="NoteInSite — заметки прямо в тексте сайтов">
+<meta property="og:description" content="Заметки, вплетённые в текст сайта: вёрстка раздвигается под заметку, при перетаскивании видно, куда она встанет. Шрифты и цвета, ссылки во всплывающих окнах.">
+<meta property="og:url" content="http://noteinsite.atmos.ho.ua/">
+<meta property="og:image" content="http://noteinsite.atmos.ho.ua/assets/img/og-cover.png?v=4">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css?v=3">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html"><img src="assets/img/icon48.png" alt="" width="28" height="28">NoteInSite</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Меню">☰</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="index.html" aria-current="page">Главная</a>
+      <a href="features.html">Возможности</a>
+      <a href="help.html">Справка</a>
+      <a href="privacy.html">Конфиденциальность</a>
+      <a href="support.html">Поддержка</a>
+      <a class="btn btn-sm" href="install.html">Установить</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Расширение для Chrome · версия 1.1.0</span>
+        <h1>Заметки, вплетённые в страницу</h1>
+        <p class="lead">
+          NoteInSite не кладёт стикер поверх сайта: заметка встаёт в вёрстку, как врезка
+          в журнале, — текст раздвигается и обтекает её, ничего не перекрыто. При следующем
+          открытии страницы заметка окажется там же.
+        </p>
+        <div class="hero-actions">
+          <a class="btn" href="install.html">Установить расширение</a>
+          <a class="btn btn-ghost" href="features.html">Что оно умеет</a>
+        </div>
+        <p class="hero-note">Бесплатно · без регистрации · заметки не покидают ваш браузер</p>
+      </div>
+
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar">
+          <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+          <span class="mock-url">https://любой-сайт.ру/инструкция</span>
+        </div>
+        <div class="mock-body">
+          <div class="mock-line title"></div>
+          <div class="sticky-note n1">Сверить с <b>выгрузкой</b> до 15:00</div>
+          <div class="mock-line w90"></div>
+          <div class="mock-line w70"></div>
+          <div class="mock-line w90"></div>
+          <div class="mock-line w55"></div>
+          <div class="sticky-note n2">Курсы берём на дату <b>закрытия</b></div>
+          <div class="mock-line w90"></div>
+          <div class="mock-line w70"></div>
+          <div class="mock-line w90"></div>
+          <div class="sticky-note n3">Спросить у Ани про возвраты</div>
+          <div class="mock-line w70"></div>
+          <div class="mock-line w90"></div>
+          <div class="mock-line w40"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sunken">
+    <div class="container">
+      <div class="section-head center">
+        <h2>Главное в трёх пунктах</h2>
+        <p class="lead">Заметка занимает место в вёрстке, оформляется как обычный документ и остаётся только у вас.</p>
+      </div>
+      <div class="grid grid-3 reveal">
+        <article class="card">
+          <div class="card-icon y">🧩</div>
+          <h3>Встаёт в текст, а не поверх него</h3>
+          <p>
+            Заметка занимает место в вёрстке: в широком блоке текст обтекает её сбоку,
+            в узком — уезжает вниз. Ничего не перекрыто, и при следующем открытии страницы
+            заметка оказывается ровно там же — даже если вёрстка сдвинулась.
+          </p>
+        </article>
+        <article class="card">
+          <div class="card-icon">✎</div>
+          <h3>Оформление под рукой</h3>
+          <p>
+            Жирный, курсив, подчёркнутый, зачёркнутый, 9 шрифтов, размер от 11 до 40 px,
+            цвет текста и цвет самой заметки, списки, ссылки и эмодзи. Панель кнопок появляется
+            по клику или касанию заметки и прячется, когда кликнули мимо, — читать не мешает.
+          </p>
+        </article>
+        <article class="card">
+          <div class="card-icon g">🔒</div>
+          <h3>Ничего не уходит в сеть</h3>
+          <p>
+            Заметки лежат в локальном хранилище браузера. Расширение не делает сетевых запросов,
+            не собирает статистику и не читает содержимое страниц, на которых вы работаете.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Как это выглядит</h2>
+        <p class="lead">Четыре состояния: заметки в тексте страницы, курсор вставки при перетаскивании, режим правки и окно расширения.</p>
+      </div>
+      <div class="shots reveal">
+        <div class="shot">
+          <figure>
+            <picture>
+              <source srcset="assets/img/shot-notes.webp?v=3" type="image/webp">
+              <img src="assets/img/shot-notes.png?v=3" width="1077" height="790" loading="lazy"
+                   alt="Веб-страница с тремя цветными заметками внутри текста: абзацы обтекают их слева и справа">
+            </picture>
+            <figcaption>Заметка занимает место в вёрстке — текст раздвигается и обтекает её, как врезку в журнале.</figcaption>
+          </figure>
+        </div>
+        <div class="shot">
+          <figure>
+            <picture>
+              <source srcset="assets/img/shot-drop.webp?v=3" type="image/webp">
+              <img src="assets/img/shot-drop.png?v=3" width="1077" height="790" loading="lazy"
+                   alt="Перетаскивание заметки: подсвечен блок вёрстки, полоса показывает строку вставки, пунктир — будущее место заметки">
+            </picture>
+            <figcaption>Пока заметку тащат, видно блок вёрстки, строку вставки и место, куда заметка встанет.</figcaption>
+          </figure>
+        </div>
+        <div class="shot">
+          <figure>
+            <picture>
+              <source srcset="assets/img/shot-editing.webp?v=3" type="image/webp">
+              <img src="assets/img/shot-editing.png?v=3" width="1077" height="790" loading="lazy"
+                   alt="Вплетённая в текст заметка в режиме правки: над ней открыта панель с кнопками форматирования и эмодзи">
+            </picture>
+            <figcaption>Клик или касание по заметке открывает правку вместе с панелью: начертания, шрифты, цвета, ссылки и сетка эмодзи.</figcaption>
+          </figure>
+        </div>
+        <div class="shot shot-narrow">
+          <figure>
+            <picture>
+              <source srcset="assets/img/shot-popup.webp?v=3" type="image/webp">
+              <img src="assets/img/shot-popup.png?v=3" width="374" height="683" loading="lazy"
+                   alt="Окно расширения: переключатели показа, список заметок страницы, экспорт всех заметок и только этой страницы, импорт">
+            </picture>
+            <figcaption>В окне расширения — показ заметок, список на странице и резервная копия: всё сразу или только эта страница.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sunken">
+    <div class="container">
+      <div class="section-head">
+        <h2>Пригодится, когда</h2>
+      </div>
+      <div class="grid grid-2 reveal">
+        <article class="card">
+          <h3>Работаете по инструкции</h3>
+          <p>Регламент, база знаний, документация — примечание «у нас это делают иначе» встаёт прямо в нужный шаг, а текст расходится под него.</p>
+        </article>
+        <article class="card">
+          <h3>Учитесь по статьям</h3>
+          <p>Конспект пишется рядом с абзацем, а не в отдельном файле, где непонятно, к чему он относился.</p>
+        </article>
+        <article class="card">
+          <h3>Ведёте типовые задачи в вебе</h3>
+          <p>Заметка со ссылкой на справочник открывает его во всплывающем окне нужного размера — вкладка остаётся свободной.</p>
+        </article>
+        <article class="card">
+          <h3>Нужна памятка на весь сайт</h3>
+          <p>Кнопка 🌐 делает заметку общей для всех страниц сайта, а 📌 закрепляет её на экране.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Начать за минуту</h2>
+      </div>
+      <div class="grid grid-2">
+        <div class="steps">
+          <div class="step">
+            <div>
+              <h3>Установите расширение</h3>
+              <p>Из Chrome Web Store или вручную из архива — <a href="install.html">инструкция по установке</a>.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div>
+              <h3>Откройте нужную страницу</h3>
+              <p>Уже открытые вкладки обновите: слой заметок подключается при загрузке страницы.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div>
+              <h3>Поставьте заметку</h3>
+              <p>Правый клик → «Добавить заметку здесь», <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> или <kbd>Alt</kbd> + двойной клик. Текст сам разойдётся под заметку.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div>
+              <h3>Пишите и оформляйте</h3>
+              <p>Клик или касание по заметке открывает правку вместе с панелью, <kbd>Esc</kbd> или клик мимо — выходит из неё.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Горячие клавиши</h3>
+          <div class="table-wrap" style="margin-top:14px">
+            <table>
+              <tbody>
+                <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></td><td>Новая заметка</td></tr>
+                <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd></td><td>Показать / скрыть заметки</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd></td><td>Жирный, курсив, подчёркнутый</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Вставить ссылку</td></tr>
+                <tr><td><kbd>Esc</kbd></td><td>Выйти из редактирования</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin:14px 0 0;font-size:.9rem">
+            Сочетания меняются на странице <code>chrome://extensions/shortcuts</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sunken">
+    <div class="container">
+      <div class="section-head center">
+        <h2>Частые вопросы</h2>
+      </div>
+      <div class="faq reveal">
+        <details class="qa">
+          <summary>Заметки видит кто-то ещё?</summary>
+          <div><p>Нет. Заметка существует только в вашем браузере: другие посетители сайта её не видят, и сам сайт о ней ничего не знает. Общий доступ и синхронизация между устройствами не поддерживаются.</p></div>
+        </details>
+        <details class="qa">
+          <summary>Что будет с заметками, если сайт изменится?</summary>
+          <div><p>Заметка ищет свой якорь — заголовок или абзац, рядом с которым она была поставлена. Если такого элемента больше нет, она вернётся на сохранённые координаты. При крупной переделке страницы заметку может понадобиться передвинуть вручную.</p></div>
+        </details>
+        <details class="qa">
+          <summary>Зачем расширению доступ ко всем сайтам?</summary>
+          <div><p>Заметку можно поставить на любом сайте, перечислить их заранее невозможно. Доступ используется только чтобы нарисовать собственный слой заметок и вернуть их на места — содержимое страниц не читается и никуда не передаётся. Подробнее в <a href="privacy.html">политике конфиденциальности</a>.</p></div>
+        </details>
+        <details class="qa">
+          <summary>Как перенести заметки на другой компьютер?</summary>
+          <div><p>В окне расширения есть кнопки «Экспорт» и «Импорт»: все заметки сохраняются в один файл JSON и восстанавливаются из него на другом устройстве.</p></div>
+        </details>
+        <details class="qa">
+          <summary>Работает ли в других браузерах?</summary>
+          <div><p>Расширение собрано по Manifest V3 и рассчитано на Chrome. В браузерах на том же движке — Edge, Brave, Vivaldi, Opera — оно ставится так же, вручную из архива. Firefox и Safari не поддерживаются.</p></div>
+        </details>
+      </div>
+      <p class="center" style="margin-top:24px"><a href="help.html">Вся справка по работе с заметками →</a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="cta reveal">
+        <h2>Поставьте первую заметку</h2>
+        <p class="lead">Установка занимает минуту, а заметки останутся с вами даже без интернета.</p>
+        <div class="hero-actions">
+          <a class="btn" href="install.html">Установить расширение</a>
+          <a class="btn btn-ghost" href="download/noteinsite-1.1.0.zip">Скачать ZIP · 39 КБ</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="brand" href="index.html" style="margin-bottom:10px"><img src="assets/img/icon48.png" alt="" width="28" height="28">NoteInSite</a>
+        <p class="muted" style="max-width:36ch">Заметки прямо в тексте любых сайтов. Всё хранится локально, в вашем браузере.</p>
+      </div>
+      <div>
+        <h4>Расширение</h4>
+        <ul>
+          <li><a href="features.html">Возможности</a></li>
+          <li><a href="install.html">Установка</a></li>
+          <li><a href="help.html">Справка и FAQ</a></li>
+          <li><a href="changelog.html">История версий</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Документы</h4>
+        <ul>
+          <li><a href="privacy.html">Конфиденциальность</a></li>
+          <li><a href="terms.html">Условия использования</a></li>
+          <li><a href="support.html">Поддержка</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year>2026</span> NoteInSite</span>
+      <span>noteinsite.atmos.ho.ua</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js?v=3"></script>
+</body>
+</html>

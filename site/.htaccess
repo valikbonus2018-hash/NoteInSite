@@ -1,0 +1,28 @@
+# NoteInSite — настройки только для этой папки. Другие сайты на аккаунте не затрагиваются.
+
+AddDefaultCharset utf-8
+DirectoryIndex index.html
+
+# Страница 404. Путь указывается от корня документов сервера, а корень
+# и для atmos.ho.ua, и для поддомена noteinsite.atmos.ho.ua — это htdocs
+# (поддомен подставляется в эту папку правилом из корневого .htaccess).
+# Если поддомену когда-нибудь зададут собственный корень htdocs/noteinsite,
+# строку нужно заменить на:  ErrorDocument 404 /404.html
+ErrorDocument 404 /noteinsite/404.html
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  <FilesMatch "\.(css|js|png|webp|zip)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/xml
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/zip .zip
+  AddType image/webp .webp
+</IfModule>

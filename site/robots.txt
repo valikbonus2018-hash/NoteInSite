@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: http://noteinsite.atmos.ho.ua/sitemap.xml

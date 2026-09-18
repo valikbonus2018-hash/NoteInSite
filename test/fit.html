@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Встраивание заметок в поток вёрстки</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.6 system-ui, "Segoe UI", Arial, sans-serif; color: #1d2330; }
+  .topbar { background: #23304a; color: #fff; padding: 12px 20px; }
+  .wrap { display: flex; gap: 24px; max-width: 1100px; margin: 0 auto; padding: 20px 24px 120px; }
+  .article { flex: 1 1 auto; min-width: 0; }
+  .aside { flex: 0 0 240px; }                     /* узкая колонка: широкая заметка должна сузиться */
+  .card { background: #f3f5f9; border: 1px solid #dde2ec; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; }
+  .card.narrow { width: 190px; }                  /* совсем узкий блок: ужимаем до минимума 150 px */
+  .flexrow { display: flex; gap: 12px; margin: 18px 0; }   /* во flex встраиваться нельзя — ищется родитель */
+  .flexrow > div { flex: 1 1 0; background: #f3f5f9; border-radius: 8px; padding: 10px 12px; }
+  .quote { border-left: 4px solid #2f6fed; background: #f7f9ff; padding: 10px 14px; margin: 18px 0; }
+  .tall { height: 320px; background: #eef1f6; border-radius: 8px; padding: 12px 14px; }
+  h1 { font-size: 22px; margin: 0 0 12px; }
+  h2 { font-size: 18px; margin: 22px 0 8px; }
+  p { margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<div class="topbar">Шапка сайта</div>
+<div class="wrap">
+  <div class="article">
+    <h1>Блоки вёрстки разной ширины</h1>
+    <p>Тащите заметку по странице: рамка показывает блок вёрстки, в который она встроится,
+       полоса — строку, перед которой она встанет, пунктир — её будущее место. При отпускании
+       заметка занимает место в вёрстке, и текст вокруг раздвигается: в широком блоке
+       обтекает её сбоку, в узком — уезжает вниз.</p>
+    <div class="tall">
+      <p>Высокий блок. Заметка укладывается в него целиком, поэтому текст обтекает её
+         слева или справа — смотря в какую половину блока её принесли.</p>
+    </div>
+    <h2>Цитата</h2>
+    <div class="quote">
+      <p>Невысокий блок: заметка в него по высоте не влезает, поэтому встраивается
+         в колонку — и этот абзац обтекает её сбоку.</p>
+    </div>
+    <div class="flexrow">
+      <div>Flex-раскладка: внутрь такой строки распорку не вставляем, иначе она стала бы
+           ещё одной ячейкой. Заметка встроится в колонку выше.</div>
+      <div>Вторая ячейка, чтобы раскладка была настоящей.</div>
+    </div>
+    <p>Ещё абзац, чтобы страница была длиннее и заметки можно было проверить после прокрутки.</p>
+  </div>
+  <div class="aside">
+    <div class="card">
+      <b>Узкая колонка — 240 px</b>
+      <p>Текста рядом не останется, поэтому заметка встанет блоком и сдвинет карточки вниз.</p>
+    </div>
+    <div class="card narrow">
+      <b>Блок 190 px</b>
+      <p>Заметку сужаем до ширины блока, но не ниже 150 px.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE = JSON.parse(localStorage.getItem('nis-fit') || '{}');
+const persist = () => localStorage.setItem('nis-fit', JSON.stringify(STORE));
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys == null) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(o) { Object.assign(STORE, JSON.parse(JSON.stringify(o))); persist(); return Promise.resolve(); },
+      remove(k) { for (const x of [].concat(k)) delete STORE[x]; persist(); return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: { lastError: undefined, onMessage: { addListener(fn) { window.__NIS_MSG = fn; } }, sendMessage() {} }
+};
+window.dumpStore = () => JSON.parse(JSON.stringify(STORE));
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

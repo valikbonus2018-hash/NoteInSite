@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Карточки-ссылки — проверка заметок на списках объявлений</title>
+<style>
+  /* Разметка как на досках объявлений: вся карточка — одна ссылка,
+     внутри неё flex-строка с картинкой и текстом. */
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, "Segoe UI", Arial, sans-serif; color: #1d2330; background: #f2f4f7; }
+  header { background: #12233a; color: #fff; padding: 12px 20px; font-weight: 700; }
+  .list { max-width: 900px; margin: 0 auto; padding: 18px 16px 80px; display: grid; gap: 14px; }
+  .card { background: #fff; border: 1px solid #e3e7ee; border-radius: 10px; overflow: hidden; }
+  .card > a { display: block; color: inherit; text-decoration: none; padding: 12px; }
+  .card > a:hover { background: #fafbfd; }
+  .row { display: flex; gap: 14px; }                 /* flex — внутрь него встраиваться нельзя */
+  .thumb { flex: 0 0 150px; height: 110px; border-radius: 8px; background: linear-gradient(120deg,#e5eaf3,#d8e0ee); }
+  .body { flex: 1 1 auto; min-width: 0; }
+  .body h3 { margin: 0 0 6px; font-size: 17px; }
+  .price { margin: 0 0 6px; font-weight: 700; font-size: 16px; }
+  .desc { margin: 0 0 8px; color: #46506a; }
+  .meta { margin: 0; color: #8a93a8; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>Объявления · Кривой Рог</header>
+<div class="list">
+  <div class="card"><a href="/ad/1.html" id="ad1">
+    <div class="row">
+      <div class="thumb"></div>
+      <div class="body">
+        <h3>Велосипед горный, 27.5", 21 скорость</h3>
+        <p class="price">6 400 грн.</p>
+        <p class="desc">Состояние хорошее, обслужен в сервисе, новые покрышки и цепь. Торг уместен при осмотре.</p>
+        <p class="meta">Кривой Рог, Саксаганский · Сегодня 11:42</p>
+      </div>
+    </div>
+  </a></div>
+  <div class="card"><a href="/ad/2.html" id="ad2">
+    <div class="row">
+      <div class="thumb"></div>
+      <div class="body">
+        <h3>Холодильник двухкамерный, б/у</h3>
+        <p class="price">3 200 грн.</p>
+        <p class="desc">Рабочий, морозит хорошо, есть небольшая вмятина на боковой стенке. Самовывоз.</p>
+        <p class="meta">Кривой Рог, Покровский · Сегодня 10:05</p>
+      </div>
+    </div>
+  </a></div>
+  <div class="card"><a href="/ad/3.html" id="ad3">
+    <div class="row">
+      <div class="thumb"></div>
+      <div class="body">
+        <h3>Ноутбук 15.6", 16 ГБ, SSD 512 ГБ</h3>
+        <p class="price">14 900 грн.</p>
+        <p class="desc">Батарея держит около трёх часов, комплект с зарядкой и сумкой. Проверка при встрече.</p>
+        <p class="meta">Кривой Рог, Металлургический · Вчера 19:20</p>
+      </div>
+    </div>
+  </a></div>
+</div>
+
+<script>
+const STORE = JSON.parse(localStorage.getItem('nis-links') || '{}');
+const persist = () => localStorage.setItem('nis-links', JSON.stringify(STORE));
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys == null) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(o) { Object.assign(STORE, JSON.parse(JSON.stringify(o))); persist(); return Promise.resolve(); },
+      remove(k) { for (const x of [].concat(k)) delete STORE[x]; persist(); return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: { lastError: undefined, onMessage: { addListener(fn) { window.__NIS_MSG = fn; } }, sendMessage() {} }
+};
+window.dumpStore = () => JSON.parse(JSON.stringify(STORE));
+// переходы по ссылкам не выполняем, а записываем — так видно, ушёл бы клик на сайт или нет
+window.__nav = [];
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]');
+  if (a && !e.defaultPrevented) { window.__nav.push(a.getAttribute('href')); e.preventDefault(); }
+});
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

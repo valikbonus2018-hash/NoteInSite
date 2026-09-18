@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Глубокая вёрстка — проверка якорей</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.6 system-ui, "Segoe UI", Arial, sans-serif; color: #1d2330; }
+  .topbar { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 10px 16px; }
+  .col { max-width: 900px; margin: 0 auto; padding: 16px 24px 80px; }
+  h3 { font-size: 17px; color: #1a6c6c; margin: 26px 0 4px; }   /* блок во всю ширину колонки */
+  p { margin: 0 0 12px; }
+  .box { background: #e8e8e8; height: 34px; border-radius: 4px; margin: 10px 0 18px; }
+</style>
+</head>
+<body>
+<div class="topbar">Шапка сайта</div>
+<div><div><div><div><div><div>
+  <div class="col">
+    <div><div><div>
+      <p>Иегова вознаградил рехавитов за их преданность и послушание. Этот абзац специально
+         сделан длинным, чтобы при сужении окна он занимал больше строк и весь текст ниже
+         уезжал вниз — именно так «уплывали» заметки.</p>
+      <p>Спросите себя: настроен ли я слушаться даже в тех случаях, когда, как мне кажется,
+         я мог бы избежать последствий непослушания? Ещё одна длинная строка для переноса.</p>
+      <h3>2. Духовные жемчужины</h3>
+      <p>(10 мин.) Какие археологические находки подтверждают события, которые описываются
+         в этом стихе?</p>
+      <div class="box"></div>
+      <p>Поделитесь духовными жемчужинами, которые вы нашли в этих главах.</p>
+      <div class="box"></div>
+      <h3>3. Чтение Библии</h3>
+      <p>(4 мин.) Иер 35:1—14 (th урок 5).</p>
+      <h3>ОТТАЧИВАЕМ НАВЫКИ СЛУЖЕНИЯ</h3>
+      <p>(2 мин.) Проповедь по домам. Предложи изучение Библии.</p>
+    </div></div></div>
+  </div>
+</div></div></div></div></div></div>
+
+<script>
+const STORE = JSON.parse(localStorage.getItem('nis-deep') || '{}');
+const persist = () => localStorage.setItem('nis-deep', JSON.stringify(STORE));
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys == null) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(o) { Object.assign(STORE, JSON.parse(JSON.stringify(o))); persist(); return Promise.resolve(); },
+      remove(k) { for (const x of [].concat(k)) delete STORE[x]; persist(); return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: { lastError: undefined, onMessage: { addListener(fn) { window.__NIS_MSG = fn; } }, sendMessage() {} }
+};
+window.dumpStore = () => JSON.parse(JSON.stringify(STORE));
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

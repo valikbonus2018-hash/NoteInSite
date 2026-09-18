@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>NoteInSite — демонстрация</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.65 system-ui, "Segoe UI", Arial, sans-serif; color: #1d2330; background: #fff; }
+  header { background: #1e2637; color: #fff; padding: 14px 40px; display: flex; align-items: center; gap: 26px; }
+  header .brand { font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+  header nav { display: flex; gap: 18px; font-size: 14px; opacity: .8; }
+  main { max-width: 760px; margin: 0 auto; padding: 34px 20px 60px; }
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 6px; }
+  .meta { color: #7a8294; font-size: 13px; margin-bottom: 22px; }
+  h2 { font-size: 20px; margin: 26px 0 8px; }
+  p { margin: 0 0 14px; }
+  .fig { height: 120px; border-radius: 10px; background: linear-gradient(120deg,#e9edf5,#dfe6f2); margin: 18px 0; }
+  ul { margin: 0 0 14px 20px; padding: 0; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Рабочий портал</span>
+  <nav><span>Документы</span><span>Отчёты</span><span>Команда</span><span>Справка</span></nav>
+</header>
+<main>
+  <h1>Регламент подготовки квартального отчёта</h1>
+  <div class="meta">Обновлено 12 марта · отдел аналитики · 6 мин чтения</div>
+  <p id="p1">Отчёт собирается из трёх источников: выгрузки из биллинга, ручных корректировок
+     и данных партнёрской сети. Каждый источник имеет своё окно закрытия периода, поэтому
+     порядок шагов важен.</p>
+  <h2>Шаг 1. Сверка выгрузок</h2>
+  <p id="p2">Дождитесь закрытия периода в биллинге и выгрузите сводную таблицу. Расхождение
+     до 0,5% считается допустимым и фиксируется в комментарии к отчёту.</p>
+  <div class="fig"></div>
+  <h2>Шаг 2. Корректировки</h2>
+  <p id="p3">Корректировки вносит ответственный аналитик. Любое изменение после публикации
+     требует согласования с руководителем направления.</p>
+  <ul><li>проверить курсы валют на дату закрытия;</li><li>сверить возвраты;</li><li>приложить расшифровки.</li></ul>
+  <p id="p4">После сборки отчёт уходит на ревью. Срок ревью — два рабочих дня.</p>
+</main>
+
+<script>
+/* Заглушки chrome.* — страница используется только для съёмки материалов витрины */
+const STORE = {
+  ['nis:page:' + location.origin + location.pathname.replace(/\/$/, '')]: [
+    {
+      id: 'demo1', x: 250, y: 214, w: 250, h: null, z: 12,
+      html: 'Сверить с <span style="font-weight:700">выгрузкой биллинга</span> до 15:00 — ' +
+            '<a href="https://example.com/report" title="Открыть во всплывающем окне" ' +
+            'data-nis-popup="1" data-nis-w="980" data-nis-h="720" rel="noopener noreferrer">отчёт Q3</a>',
+      bg: '#fff59d', color: '#20242e', fontFamily: 'system-ui', fontSize: 15,
+      flow: { sel: 'main', side: 'right', idx: 2, off: null },
+      anchor: { sel: '#nis-spacer-demo1', ox: 0, oy: 0 }, createdAt: 1, updatedAt: 1
+    },
+    {
+      id: 'demo2', x: 250, y: 380, w: 240, h: null, z: 13,
+      html: '<span style="font-family:Georgia,serif;font-size:17px">Курсы берём на дату ' +
+            '<span style="color:#c0353a;font-weight:700">закрытия</span>, а не публикации!</span>',
+      bg: '#cfe8ff', color: '#16324f', fontFamily: 'system-ui', fontSize: 15,
+      flow: { sel: 'main', side: 'left', idx: 4, off: null },
+      anchor: { sel: '#nis-spacer-demo2', ox: 0, oy: 0 }, createdAt: 1, updatedAt: 1
+    },
+    {
+      id: 'demo3', x: 250, y: 560, w: 250, h: null, z: 14,
+      html: 'Спросить у Ани про возвраты партнёров',
+      bg: '#d8f5cd', color: '#1c3a1a', fontFamily: 'system-ui', fontSize: 15,
+      flow: { sel: 'main', side: 'right', idx: 7, off: null },
+      anchor: { sel: '#nis-spacer-demo3', ox: 0, oy: 0 }, createdAt: 1, updatedAt: 1
+    }
+  ],
+  'nis:settings': { enabled: true, disabledSites: [], defaultScope: 'page' }
+};
+window.chrome = {
+  storage: {
+    local: {
+      get(keys) {
+        let out = {};
+        if (keys == null) out = JSON.parse(JSON.stringify(STORE));
+        else for (const k of [].concat(keys)) if (k in STORE) out[k] = JSON.parse(JSON.stringify(STORE[k]));
+        return Promise.resolve(out);
+      },
+      set(o) { Object.assign(STORE, JSON.parse(JSON.stringify(o))); return Promise.resolve(); },
+      remove(k) { for (const x of [].concat(k)) delete STORE[x]; return Promise.resolve(); }
+    },
+    onChanged: { addListener() {} }
+  },
+  runtime: { lastError: undefined, onMessage: { addListener(fn) { window.__NIS_MSG = fn; } }, sendMessage() {} }
+};
+</script>
+<script src="../src/styles.js"></script>
+<script src="../src/sanitize.js"></script>
+<script src="../src/content.js"></script>
+<style>
+/* стрелка курсора: на снимке экрана настоящий указатель мыши не виден,
+   а без него непонятно, что заметку тащат */
+#shot-cursor { position: fixed; z-index: 2147483647; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+</style>
+<script>
+/* Режимы съёмки материалов витрины:
+     ?edit=demo2            — открыть панель форматирования на заметке;
+     ?drag=demo1&to=x,y     — взять заметку и держать её над точкой (x, y):
+                              видно рамку блока, полосу строки вставки и пунктир
+                              будущего места, а вёрстка в это время сходится. */
+const q = new URLSearchParams(location.search);
+const shadow = () => document.getElementById('note-in-site-root').shadowRoot;
+const noteEl = id => shadow().querySelector(`.nis-note[data-id="${id}"]`);
+
+if (q.get('edit')) {
+  setTimeout(() => {
+    const note = noteEl(q.get('edit'));
+    if (!note) return;
+    // правка открывается кликом по самой заметке
+    const r = note.getBoundingClientRect();
+    ['pointerdown', 'pointerup', 'click'].forEach(t => {
+      const E = t === 'click' ? MouseEvent : PointerEvent;
+      note.querySelector('.nis-body').dispatchEvent(new E(t, {
+        bubbles: true, cancelable: true, composed: true,
+        clientX: Math.round(r.left + 40), clientY: Math.round(r.top + 14),
+        button: 0, pointerId: 1, isPrimary: true, pointerType: 'mouse'
+      }));
+    });
+    if (q.get('emoji')) setTimeout(() => {
+      const b = note.querySelector('[data-act="emoji"]');
+      if (b) {
+        b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, pointerId: 2, isPrimary: true, pointerType: 'mouse' }));
+        b.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+      }
+    }, 200);
+  }, 400);
+}
+
+if (q.get('drag')) {
+  setTimeout(() => {
+    const note = noteEl(q.get('drag'));
+    if (!note) return;
+    // кадры в снимающем браузере идут своим чередом, но подсказку рисуем сразу
+    window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 0);
+    const [tx, ty] = (q.get('to') || '520,470').split(',').map(Number);
+    const r = note.getBoundingClientRect();
+    const gx = r.left + r.width / 2, gy = r.top + 16;      // где «держим» заметку
+    const pe = (type, x, y, target) => target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y,
+      pointerId: 1, isPrimary: true, pointerType: 'mouse', button: 0, buttons: 1
+    }));
+    pe('pointerdown', gx, gy, note);
+    pe('pointermove', tx, ty, note);
+    const cur = document.createElement('div');
+    cur.id = 'shot-cursor';
+    cur.style.left = (tx - 3) + 'px';
+    cur.style.top = (ty - 2) + 'px';
+    cur.innerHTML = '<svg width="22" height="30" viewBox="0 0 22 30" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M2 1.6 19.4 15.2 11.6 15.8 15.8 25.6 12 27.2 7.8 17.6 2 22.4Z" fill="#fff" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    document.body.appendChild(cur);
+  }, 500);
+}
+</script>
+</body>
+</html>

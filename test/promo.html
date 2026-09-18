@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>NoteInSite — промо 440×280</title>
+<style>
+  /* Плашка витрины: 440×280. Слева — кусок страницы, в текст которой вплетена
+     заметка: строки обтекают её, как в настоящей вёрстке. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 440px; height: 280px; overflow: hidden; }
+  body {
+    display: flex; align-items: center; gap: 18px;
+    padding: 0 22px 0 20px;
+    font: 15px/1.4 system-ui, "Segoe UI", Arial, sans-serif;
+    color: #fff;
+    background: linear-gradient(145deg, #2f3a52 0%, #232c40 55%, #1c2435 100%);
+  }
+
+  .page {
+    flex: 0 0 188px; height: 216px; padding: 13px 12px 0;
+    background: #fff; border-radius: 9px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .38);
+    overflow: hidden;
+  }
+  .title { height: 9px; width: 72%; border-radius: 4px; background: #384358; margin-bottom: 11px; }
+  /* overflow: hidden — строка не лезет под заметку, а укорачивается рядом с ней */
+  .line { height: 6px; border-radius: 3px; background: #d5dae4; margin: 0 0 8px; overflow: hidden; }
+  .line.s { max-width: 82%; }
+  .line.m { max-width: 94%; }
+  .line.x { max-width: 66%; }
+
+  .note {
+    float: right; width: 96px; padding: 8px 9px 9px;
+    margin: 1px 0 9px 12px;
+    background: #fff59d; border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(20, 28, 48, .22);
+    font-size: 10.5px; line-height: 1.32; color: #232733;
+  }
+  .note b { font-weight: 700; }
+
+  .say { flex: 1 1 auto; }
+  .brand { font-size: 31px; font-weight: 700; letter-spacing: .2px; margin-bottom: 9px; }
+  .tag { font-size: 12.8px; line-height: 1.45; color: #b9c4d8; }
+  .tag b { color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="title"></div>
+    <div class="line m"></div>
+    <div class="note">Сверить с <b>выгрузкой</b> до 15:00</div>
+    <div class="line"></div>
+    <div class="line s"></div>
+    <div class="line m"></div>
+    <div class="line"></div>
+    <div class="line s"></div>
+    <div class="line m"></div>
+    <div class="line"></div>
+    <div class="line x"></div>
+  </div>
+  <div class="say">
+    <div class="brand">NoteInSite</div>
+    <div class="tag">Заметка встаёт <b>в текст</b><br>страницы, а не поверх него</div>
+  </div>
+</body>
+</html>

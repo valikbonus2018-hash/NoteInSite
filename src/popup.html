@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>NoteInSite</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <div class="logo">📝</div>
+    <div class="head-txt">
+      <div class="name">NoteInSite</div>
+      <div class="site" id="site">—</div>
+    </div>
+  </header>
+
+  <div class="warn" id="warn" hidden></div>
+
+  <section class="card">
+    <label class="switch">
+      <input type="checkbox" id="sw-global">
+      <span class="track"></span>
+      <span class="lbl">Показывать заметки (везде)</span>
+    </label>
+    <label class="switch">
+      <input type="checkbox" id="sw-site">
+      <span class="track"></span>
+      <span class="lbl">Показывать на этом сайте</span>
+    </label>
+    <button class="btn primary" id="add">＋ Добавить заметку</button>
+    <div class="hint">Также: правый клик по странице → «Добавить заметку здесь», Alt+Shift+N или Alt+двойной клик.</div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">Заметки на этой странице <span class="badge" id="cnt">0</span></div>
+    <ul class="list" id="list"></ul>
+    <div class="empty" id="empty">Здесь пока нет заметок.</div>
+  </section>
+
+  <details class="card">
+    <summary class="card-title">Настройки новых заметок</summary>
+    <div class="grid">
+      <label>Область
+        <select id="set-scope">
+          <option value="page">Только эта страница</option>
+          <option value="site">Весь сайт</option>
+        </select>
+      </label>
+      <label>Шрифт
+        <select id="set-font"></select>
+      </label>
+      <label>Размер
+        <select id="set-size"></select>
+      </label>
+      <label>Цвет текста <input type="color" id="set-color"></label>
+      <label>Цвет заметки <input type="color" id="set-bg"></label>
+      <label>Ширина окна ссылок <input type="number" id="set-pw" min="200" max="3000"></label>
+      <label>Высота окна ссылок <input type="number" id="set-ph" min="200" max="3000"></label>
+    </div>
+  </details>
+
+  <section class="card">
+    <div class="card-title">Все заметки: <span id="total">0</span> на <span id="pages">0</span> стр.</div>
+    <div class="row">
+      <button class="btn" id="export">⭳ Экспорт всех</button>
+      <button class="btn" id="import">⭱ Импорт</button>
+    </div>
+    <button class="btn" id="export-page">⭳ Экспорт только этой страницы</button>
+    <p class="hint">В файл страницы попадёт всё, что на ней видно: её собственные заметки и заметки, показываемые на всём сайте.</p>
+    <button class="btn danger" id="wipe-page">Удалить все заметки этой страницы</button>
+    <input type="file" id="file" accept="application/json" hidden>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>
