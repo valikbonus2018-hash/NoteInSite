@@ -218,6 +218,124 @@ async function unbury(ids) {
   if (hit) await chrome.storage.local.set({ [TOMB_KEY]: cur });
 }
 
+/* ---------- проверка импортируемого файла ----------
+   До сих пор в хранилище уезжало всё, что подошло под маску ключа: ни формы
+   записи, ни типов полей никто не проверял. Правило простое: что можно починить — чиним
+   (недостающее берём из умолчаний, числа зажимаем в пределы), что нельзя —
+   выбрасываем и считаем, сколько выбросили. */
+
+const MAX_HTML = 64 * 1024;          // на заметку; больше — почти наверняка не заметка
+const MAX_KEY = 2048;
+const MAX_SEL = 1024;
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/* Свойства, которые заметка может задать себе сама (кнопки Ж/К/Ч в панели).
+   Без этого списка extra из файла уходил прямо в el.style.setProperty(): чужой
+   файл мог бы дотянуться до любого свойства, вплоть до фоновой картинки с чужого
+   адреса — то есть отметки о том, что заметку открыли. */
+const EXTRA_PROPS = new Set(['font-weight', 'font-style', 'text-decoration-line']);
+
+function num(v, min, max, dflt) {
+  const x = typeof v === 'number' ? v : parseFloat(v);
+  if (!isFinite(x)) return dflt;
+  return Math.min(max, Math.max(min, x));
+}
+
+function validKey(k) {
+  if (typeof k !== 'string' || k.length > MAX_KEY) return false;
+  const m = /^nis:(page|site):(https?:\/\/[^/]+)(\/.*)?$/.exec(k);
+  if (!m || (m[1] === 'site' && m[3])) return false;   // ключ сайта — только origin, без пути
+  try { new URL(m[2]); } catch (e) { return false; }
+  return true;
+}
+
+/* Селектор из файла уходит в document.querySelector(). Там он обёрнут в try,
+   но проверить дешевле, чем каждый раз ловить исключение на отрисовке. */
+function validSel(s) {
+  if (typeof s !== 'string' || !s || s.length > MAX_SEL) return false;
+  try { document.createDocumentFragment().querySelector(s); return true; }
+  catch (e) { return false; }
+}
+
+function cleanAnchor(a) {
+  if (!a || typeof a !== 'object' || !validSel(a.sel)) return null;
+  return { sel: a.sel, ox: num(a.ox, -1e6, 1e6, 0), oy: num(a.oy, -1e6, 1e6, 0) };
+}
+
+function cleanFlow(f) {
+  if (!f || typeof f !== 'object' || !validSel(f.sel)) return null;
+  const side = (f.side === 'left' || f.side === 'right') ? f.side : 'block';
+  return { sel: f.sel, side, idx: num(f.idx, 0, 1e5, 0), off: num(f.off, 0, 1e6, 0) };
+}
+
+function cleanExtra(e) {
+  if (!e || typeof e !== 'object') return null;
+  const out = {};
+  let any = false;
+  for (const p in e) {
+    if (!EXTRA_PROPS.has(p)) continue;
+    const v = e[p];
+    if (typeof v !== 'string' || !v || v.length > 60) continue;
+    out[p] = v; any = true;
+  }
+  return any ? out : null;
+}
+
+/* Возвращает вычищенную заметку или null, если чинить нечего:
+   без внятного id и текстового html это не заметка. */
+function cleanNote(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (typeof raw.id !== 'string' || !/^[\w-]{1,64}$/.test(raw.id)) return null;
+  if (raw.html != null && typeof raw.html !== 'string') return null;
+  if (String(raw.html || '').length > MAX_HTML) return null;
+
+  const now = Date.now();
+  const ds = DEFAULTS.defaultStyle;
+  const n = {
+    id: raw.id,
+    html: NIS_SANITIZE(String(raw.html || '')),
+    x: num(raw.x, -1e6, 1e6, 0),
+    y: num(raw.y, -1e6, 1e6, 0),
+    w: num(raw.w, 80, 2000, 240),
+    h: raw.h == null ? null : num(raw.h, 20, 4000, null),
+    fixed: !!raw.fixed,
+    collapsed: !!raw.collapsed,
+    z: num(raw.z, 0, 1e6, 10),
+    bg: HEX.test(raw.bg) ? raw.bg : ds.bg,
+    color: HEX.test(raw.color) ? raw.color : ds.color,
+    fontFamily: FONTS.some(f => f[0] === raw.fontFamily) ? raw.fontFamily : ds.fontFamily,
+    fontSize: Math.round(num(raw.fontSize, 8, 72, ds.fontSize)),
+    createdAt: num(raw.createdAt, 0, 8.64e15, now),
+    updatedAt: num(raw.updatedAt, 0, 8.64e15, now)
+  };
+  const a = cleanAnchor(raw.anchor); if (a) n.anchor = a;
+  const f = cleanFlow(raw.flow);     if (f) n.flow = f;
+  const e = cleanExtra(raw.extra);   if (e) n.extra = e;
+  return n;
+}
+
+function cleanSettings(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const ds = DEFAULTS.defaultStyle, s = raw.defaultStyle || {}, p = raw.popupSize || {};
+  return {
+    enabled: raw.enabled !== false,
+    disabledSites: Array.isArray(raw.disabledSites)
+      ? raw.disabledSites.filter(h => typeof h === 'string' && h && h.length < 256).slice(0, 5000)
+      : [],
+    defaultScope: raw.defaultScope === 'site' ? 'site' : 'page',
+    defaultStyle: {
+      bg: HEX.test(s.bg) ? s.bg : ds.bg,
+      color: HEX.test(s.color) ? s.color : ds.color,
+      fontFamily: FONTS.some(f => f[0] === s.fontFamily) ? s.fontFamily : ds.fontFamily,
+      fontSize: Math.round(num(s.fontSize, 8, 72, ds.fontSize))
+    },
+    popupSize: {
+      width: Math.round(num(p.width, 200, 3000, DEFAULTS.popupSize.width)),
+      height: Math.round(num(p.height, 200, 3000, DEFAULTS.popupSize.height))
+    }
+  };
+}
+
 /* ---------- корзина ----------
    Те же записи, что кладёт content.js: сама заметка, ключ, откуда её убрали,
    и время удаления. Живут три дня. */
@@ -445,26 +563,56 @@ function wireUI() {
     if (!f) return;
     try {
       const parsed = JSON.parse(await f.text());
-      const data = parsed && parsed.data ? parsed.data : parsed;
+      if (!parsed || typeof parsed !== 'object') throw new Error('в файле не объект');
+      const data = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+
       const add = {};
       const restored = [];
+      let added = 0, dup = 0, bad = 0, badKeys = 0;
       const cur = await chrome.storage.local.get(null);
+
       for (const k in data) {
-        if (!/^nis:(page|site):/.test(k)) continue;
-        const incoming = Array.isArray(data[k]) ? data[k] : [];
+        if (!/^nis:(page|site):/.test(k)) continue;      // не заметки — молча мимо
+        if (!validKey(k) || !Array.isArray(data[k])) { badKeys++; continue; }
+
         const existing = Array.isArray(cur[k]) ? cur[k] : [];
         const ids = new Set(existing.map(n => n.id));
-        const fresh = incoming.filter(n => n && n.id && !ids.has(n.id));
-        restored.push(...fresh.map(n => n.id));
-        add[k] = existing.concat(fresh);
+        const fresh = [];
+        for (const raw of data[k]) {
+          const n = cleanNote(raw);
+          if (!n) { bad++; continue; }
+          if (ids.has(n.id)) { dup++; continue; }        // повторная загрузка того же файла
+          ids.add(n.id);
+          fresh.push(n);
+          restored.push(n.id);
+        }
+        added += fresh.length;
+        if (fresh.length) add[k] = existing.concat(fresh);
       }
-      if (data[SETTINGS_KEY] && !cur[SETTINGS_KEY]) add[SETTINGS_KEY] = data[SETTINGS_KEY];
-      await chrome.storage.local.set(add);
+
+      if (data[SETTINGS_KEY] && !cur[SETTINGS_KEY]) {
+        const s = cleanSettings(data[SETTINGS_KEY]);
+        if (s) add[SETTINGS_KEY] = s;
+      }
+
+      if (Object.keys(add).length) await chrome.storage.local.set(add);
       await unbury(restored);       // иначе надгробие спрячет только что восстановленное
+
       $('warn').hidden = false;
-      $('warn').textContent = 'Импорт завершён. Обновите страницу, чтобы увидеть заметки.';
+      if (!added && !dup && !bad && !badKeys) {
+        $('warn').textContent = 'В этом файле нет заметок NoteInSite.';
+      } else {
+        const parts = ['Добавлено заметок: ' + added];
+        if (dup) parts.push('уже были: ' + dup);
+        if (bad) parts.push('не похожи на заметки: ' + bad);
+        if (badKeys) parts.push('пропущено разделов: ' + badKeys);
+        $('warn').textContent = parts.join(', ') + '.' +
+          (added ? ' Обновите страницу, чтобы увидеть заметки.' : '');
+      }
+
       await updateTotals();
       renderList(await notesFromStorage());
+      await renderTrash();
     } catch (err) {
       $('warn').hidden = false;
       $('warn').textContent = 'Не удалось прочитать файл: ' + err.message;

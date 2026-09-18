@@ -71,9 +71,14 @@ fetch('../src/popup.html')
     const frag = document.createElement('div');
     frag.innerHTML = doc.body.innerHTML.replace(/<script[\s\S]*?<\/script>/g, '');
     document.body.appendChild(frag);
-    const s = document.createElement('script');
-    s.src = '../src/popup.js';
-    document.body.appendChild(s);
+    // порядок как в popup.html: сначала белый список, им импорт чистит HTML
+    const load = src => new Promise(ok => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = ok;
+      document.body.appendChild(s);
+    });
+    load('../src/sanitize.js').then(() => load('../src/popup.js'));
   });
 </script>
 </body>
