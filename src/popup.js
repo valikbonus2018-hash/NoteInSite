@@ -187,6 +187,31 @@ async function deleteNote(n) {
   const arr = (res[key] || []).filter(x => x.id !== n.id);
   if (arr.length) await chrome.storage.local.set({ [key]: arr });
   else await chrome.storage.local.remove(key);
+  await bury([n.id]);
+}
+
+/* Надгробия: id удалённых заметок со временем удаления. Без них вкладка,
+   в которой заметка ещё лежит в памяти, при следующем сохранении вернула бы её
+   обратно — для неё отсутствие заметки в хранилище неотличимо от «ничего
+   не менялось». Тот же список читает и content.js. */
+const TOMB_KEY = 'nis:tombstones';
+
+async function bury(ids) {
+  if (!ids.length) return;
+  const cur = (await chrome.storage.local.get(TOMB_KEY))[TOMB_KEY] || {};
+  const now = Date.now();
+  for (const id of ids) cur[id] = now;
+  await chrome.storage.local.set({ [TOMB_KEY]: cur });
+}
+
+/* Обратная операция для импорта: заметку, которую восстанавливают из файла,
+   надгробие иначе спрятало бы сразу после загрузки. */
+async function unbury(ids) {
+  if (!ids.length) return;
+  const cur = (await chrome.storage.local.get(TOMB_KEY))[TOMB_KEY] || {};
+  let hit = false;
+  for (const id of ids) if (id in cur) { delete cur[id]; hit = true; }
+  if (hit) await chrome.storage.local.set({ [TOMB_KEY]: cur });
 }
 
 /* ---------- настройки ---------- */
@@ -322,16 +347,20 @@ function wireUI() {
       const parsed = JSON.parse(await f.text());
       const data = parsed && parsed.data ? parsed.data : parsed;
       const add = {};
+      const restored = [];
       const cur = await chrome.storage.local.get(null);
       for (const k in data) {
         if (!/^nis:(page|site):/.test(k)) continue;
         const incoming = Array.isArray(data[k]) ? data[k] : [];
         const existing = Array.isArray(cur[k]) ? cur[k] : [];
         const ids = new Set(existing.map(n => n.id));
-        add[k] = existing.concat(incoming.filter(n => n && n.id && !ids.has(n.id)));
+        const fresh = incoming.filter(n => n && n.id && !ids.has(n.id));
+        restored.push(...fresh.map(n => n.id));
+        add[k] = existing.concat(fresh);
       }
       if (data[SETTINGS_KEY] && !cur[SETTINGS_KEY]) add[SETTINGS_KEY] = data[SETTINGS_KEY];
       await chrome.storage.local.set(add);
+      await unbury(restored);       // иначе надгробие спрячет только что восстановленное
       $('warn').hidden = false;
       $('warn').textContent = 'Импорт завершён. Обновите страницу, чтобы увидеть заметки.';
       await updateTotals();
@@ -347,7 +376,10 @@ function wireUI() {
     if (!tab || !/^https?:/i.test(tab.url || '')) return;
     if (!confirm('Удалить все заметки этой страницы (включая заметки всего сайта)?')) return;
     const k = keysFor(tab.url);
+    const got = await chrome.storage.local.get([k.page, k.site]);
+    const ids = [].concat(got[k.page] || [], got[k.site] || []).map(n => n.id).filter(Boolean);
     await chrome.storage.local.remove([k.page, k.site]);
+    await bury(ids);
     if (contentAlive) await ask({ type: 'nis:reload' });
     renderList([]);
     updateTotals();

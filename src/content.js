@@ -5,6 +5,8 @@
   window.__NIS_ACTIVE__ = true;
 
   const SETTINGS_KEY = 'nis:settings';
+  const TOMB_KEY = 'nis:tombstones';        // id удалённых заметок, чтобы слияние их не воскрешало
+  const TOMB_TTL = 30 * 24 * 60 * 60 * 1000;
   const DEFAULTS = {
     enabled: true,
     disabledSites: [],
@@ -42,7 +44,8 @@
   let host = null, shadow = null, layer = null;
   let off = { x: 0, y: 0 };         // смещение системы координат слоя относительно документа
   let zTop = 10;
-  let selfWrite = false;
+  let tombs = {};                   // id удалённой заметки -> когда удалили
+  const lastWritten = new Map();    // ключ -> JSON того, что мы записали последними
   let saveTimer = null, inputTimer = null;
   let dirty = false;                // есть несохранённые изменения
   let saveRetry = 0, retryTimer = null, failToast = null;
@@ -55,24 +58,93 @@
   const normPath = p => (p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p);
   const pageKey = () => `nis:page:${location.origin}${normPath(location.pathname)}`;
   const siteKey = () => `nis:site:${location.origin}`;
+  const myKeys = () => [SETTINGS_KEY, TOMB_KEY, pageKey(), siteKey()];
 
   /* ---------------- загрузка / сохранение ---------------- */
-  async function loadAll() {
-    let res = {};
-    try { res = await chrome.storage.local.get([SETTINGS_KEY, pageKey(), siteKey()]); } catch (e) { return; }
-    settings = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), res[SETTINGS_KEY] || {});
+  const notesFrom = res => []
+    .concat((res[pageKey()] || []).map(n => Object.assign({}, n, { scope: 'page' })))
+    .concat((res[siteKey()] || []).map(n => Object.assign({}, n, { scope: 'site' })));
+
+  function applySettings(raw) {
+    settings = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), raw || {});
     settings.defaultStyle = Object.assign({}, DEFAULTS.defaultStyle, settings.defaultStyle || {});
     settings.popupSize = Object.assign({}, DEFAULTS.popupSize, settings.popupSize || {});
-    const p = (res[pageKey()] || []).map(n => Object.assign({}, n, { scope: 'page' }));
-    const s = (res[siteKey()] || []).map(n => Object.assign({}, n, { scope: 'site' }));
-    notes = p.concat(s);
+  }
+
+  async function loadAll() {
+    let res = {};
+    try { res = await chrome.storage.local.get(myKeys()); } catch (e) { return; }
+    applySettings(res[SETTINGS_KEY]);
+    tombs = pruneTombs(res[TOMB_KEY]);
+    notes = notesFrom(res).filter(n => !buried(n));
     zTop = notes.reduce((m, n) => Math.max(m, n.z || 0), 10);
   }
+
+  /* ---------------- слияние состояний ----------------
+     Раньше saveAll() перезаписывала оба ключа целиком тем, что лежало в памяти
+     вкладки. Две вкладки одной страницы из-за этого затирали правки друг друга:
+     та, что сохранила последней, побеждала вместе со своим устаревшим списком.
+     Теперь перед записью читаем, что там сейчас, и сливаем. */
+
+  const stamp = n => n.updatedAt || n.createdAt || 0;
+
+  /* Удалённую заметку нельзя просто «не найти» в чужом списке: для той вкладки,
+     где она ещё в памяти, это выглядело бы как отсутствие изменений, и слияние
+     вернуло бы её обратно. Поэтому удаление оставляет надгробие — id и время. */
+  function pruneTombs(raw) {
+    const out = {}, edge = Date.now() - TOMB_TTL;
+    for (const id in (raw || {})) if (raw[id] > edge) out[id] = raw[id];
+    return out;
+  }
+
+  const buried = n => tombs[n.id] >= stamp(n);
+
+  /* Заметки, которые сейчас правят или тащат: их версия в памяти всегда главная,
+     иначе текст менялся бы под руками, а заметка прыгала из-под курсора. */
+  function busyIds() {
+    const s = new Set();
+    for (const [id, el] of els) if (isEditing(el) || dragging(el)) s.add(id);
+    return s;
+  }
+
+  /* Побеждает версия с большим updatedAt; при равенстве — своя, иначе две вкладки
+     перекидывали бы заметку туда-сюда на каждой записи. */
+  function mergeNotes(mine, theirs) {
+    const busy = busyIds();
+    const by = new Map();
+    for (const n of theirs) by.set(n.id, n);
+    for (const n of mine) {
+      const other = by.get(n.id);
+      if (busy.has(n.id) || !other || stamp(n) >= stamp(other)) by.set(n.id, n);
+    }
+    return Array.from(by.values()).filter(n => busy.has(n.id) || !buried(n));
+  }
+
+  /* Свою же запись storage.onChanged присылает обратно. Раньше её отличали
+     по флагу, который снимался через 80 мс: чужая запись, попавшая в это окно,
+     терялась, а затянувшаяся своя вызывала лишнее перечитывание. Теперь просто
+     сравниваем пришедшее значение с тем, что записали сами, — без таймеров. */
+  const stored = v => (v === undefined ? 'null' : JSON.stringify(v));
+  const markWritten = (k, v) => lastWritten.set(k, stored(v));
+  const wroteThis = (k, v) => lastWritten.get(k) === stored(v);
 
   function scheduleSave() { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(saveAll, 250); }
 
   async function saveAll() {
     clearTimeout(saveTimer);
+
+    // читаем то, что лежит сейчас: за время правки соседняя вкладка могла записать своё
+    let res = {};
+    try { res = await chrome.storage.local.get([pageKey(), siteKey(), TOMB_KEY]); }
+    catch (e) { dirty = true; writeFailed(e); return; }
+
+    tombs = pruneTombs(Object.assign({}, res[TOMB_KEY], tombs));
+    const merged = mergeNotes(notes, notesFrom(res));
+    const grew = merged.length !== notes.length ||
+                 merged.some(n => !notes.includes(n));   // в слиянии победила чужая версия
+    notes = merged;
+    zTop = notes.reduce((m, n) => Math.max(m, n.z || 0), zTop);
+
     const pack = sc => notes
       .filter(n => (n.scope || 'page') === sc)
       .map(n => { const c = Object.assign({}, n); delete c.scope; return c; });
@@ -80,8 +152,16 @@
     const set = {}, del = [];
     if (p.length) set[pageKey()] = p; else del.push(pageKey());
     if (s.length) set[siteKey()] = s; else del.push(siteKey());
-    selfWrite = true;
+    if (Object.keys(tombs).length) set[TOMB_KEY] = tombs; else del.push(TOMB_KEY);
+
     dirty = false;
+    /* Пометку ставим до записи, а не после: onChanged о своей же записи приходит
+       раньше, чем разрешается промис set(), и «пометим потом» опаздывает —
+       вкладка перечитывает хранилище следом за каждым своим сохранением.
+       Если запись не удастся, пометка останется лишней, но и вреда не будет:
+       уведомления о неслучившемся изменении не приходит. */
+    for (const k in set) markWritten(k, set[k]);
+    for (const k of del) markWritten(k, undefined);
     try {
       if (Object.keys(set).length) await chrome.storage.local.set(set);
       if (del.length) await chrome.storage.local.remove(del);
@@ -90,14 +170,15 @@
       dirty = true;                   // записи не было — изменения всё ещё только в памяти
       writeFailed(e);
     }
-    setTimeout(() => { selfWrite = false; }, 80);
+    if (grew) syncDom();              // подхватили чужие заметки — показываем их
   }
 
   async function saveSettings() {
-    selfWrite = true;
-    try { await chrome.storage.local.set({ [SETTINGS_KEY]: settings }); writeOk(); }
-    catch (e) { writeFailed(e, true); }
-    setTimeout(() => { selfWrite = false; }, 80);
+    markWritten(SETTINGS_KEY, settings);        // до записи — см. пояснение в saveAll()
+    try {
+      await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+      writeOk();
+    } catch (e) { writeFailed(e, true); }
   }
 
   /* ---------------- неудачная запись ---------------- */
@@ -833,6 +914,47 @@
     renderAll();
   }
 
+  /* Перерисовка после слияния. Полный renderAll() снёс бы и ту заметку, которую
+     сейчас правят или тащат, — вместе с курсором, выделением и жестом. Поэтому
+     занятые оставляем как есть, остальные пересобираем: так не нужно обновлять
+     каждое поле по отдельности и не появляется расхождений с renderNote(). */
+  function syncDom() {
+    ensureHost();
+    if (!visible()) { layer.textContent = ''; els.clear(); removeAllSpacers(); return; }
+    measureOffset();
+    const alive = new Set(notes.map(n => n.id));
+    for (const [id, el] of Array.from(els)) {
+      if (alive.has(id)) continue;
+      removeSpacer({ id });           // заметку удалили в другой вкладке — убираем и распорку
+      el.remove();
+      els.delete(id);
+    }
+    for (const n of notes) {
+      const el = els.get(n.id);
+      if (el && (isEditing(el) || dragging(el))) continue;
+      if (el) { removeSpacer(n); el.remove(); els.delete(n.id); }
+      renderNote(n);
+    }
+    scheduleOcclusion(150);
+  }
+
+  /* Чужая запись в хранилище: подмешиваем её к тому, что в памяти. Раньше здесь
+     был полный reload(), и он пропускался, если на странице открыта правка, —
+     то есть правка соседней вкладки просто терялась при следующем сохранении. */
+  async function external() {
+    let res = {};
+    try { res = await chrome.storage.local.get(myKeys()); } catch (e) { return; }
+    const wasVisible = visible();
+    applySettings(res[SETTINGS_KEY]);
+    tombs = pruneTombs(Object.assign({}, tombs, res[TOMB_KEY]));
+    const merged = mergeNotes(notes, notesFrom(res));
+    const changed = merged.length !== notes.length || merged.some(n => !notes.includes(n));
+    notes = merged;
+    zTop = notes.reduce((m, n) => Math.max(m, n.z || 0), zTop);
+    if (visible() !== wasVisible) renderAll();
+    else if (changed) syncDom();
+  }
+
   /* ---------------- поведение заметки ---------------- */
   const isEditing = el => el.classList.contains('editing');
   const anyEditing = () => Array.from(els.values()).some(isEditing);
@@ -895,6 +1017,7 @@
     const i = notes.findIndex(n => n.id === id);
     if (i < 0) return;
     pickFromFlow(notes[i]);           // убираем распорку — текст сходится обратно
+    tombs[id] = Date.now();           // надгробие: слияние не вернёт заметку из чужой памяти
     notes.splice(i, 1);
     const el = els.get(id);
     if (el) el.remove();
@@ -1088,6 +1211,7 @@
           n.y = Math.round(r.top + window.scrollY);
           n.anchor = computeAnchor(n.x, n.y);
         }
+        n.updatedAt = Date.now();
         applyNoteStyle(n, el);
         applyPos(n, el);
         scheduleSave();
@@ -1805,11 +1929,12 @@
   }, 800);
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || selfWrite) return;
-    const keys = Object.keys(changes);
-    if (!keys.some(k => k === SETTINGS_KEY || k === pageKey() || k === siteKey())) return;
-    if (anyEditing()) return;                 // не затираем то, что сейчас редактируется
-    reload();
+    if (area !== 'local') return;
+    const mine = myKeys();
+    const touched = Object.keys(changes).filter(k => mine.includes(k));
+    if (!touched.length) return;
+    if (touched.every(k => wroteThis(k, changes[k].newValue))) return;   // это наша же запись
+    external();
   });
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
