@@ -102,6 +102,7 @@ async function init() {
 
   renderList(info ? info.notes : await notesFromStorage());
   updateTotals();
+  renderTrash();
   wireUI();
 }
 
@@ -167,6 +168,7 @@ function renderList(list) {
       $('cnt').textContent = String(left);
       $('empty').hidden = left > 0;
       updateTotals();
+      renderTrash();                 // удалённая тут же появляется в корзине
     });
     li.appendChild(del);
 
@@ -185,9 +187,11 @@ async function deleteNote(n) {
   const key = n.scope === 'site' ? k.site : k.page;
   const res = await chrome.storage.local.get(key);
   const arr = (res[key] || []).filter(x => x.id !== n.id);
+  const gone = (res[key] || []).find(x => x.id === n.id);
   if (arr.length) await chrome.storage.local.set({ [key]: arr });
   else await chrome.storage.local.remove(key);
   await bury([n.id]);
+  if (gone) await toTrash([{ note: gone, key, scope: n.scope, text: n.text }]);
 }
 
 /* Надгробия: id удалённых заметок со временем удаления. Без них вкладка,
@@ -212,6 +216,102 @@ async function unbury(ids) {
   let hit = false;
   for (const id of ids) if (id in cur) { delete cur[id]; hit = true; }
   if (hit) await chrome.storage.local.set({ [TOMB_KEY]: cur });
+}
+
+/* ---------- корзина ----------
+   Те же записи, что кладёт content.js: сама заметка, ключ, откуда её убрали,
+   и время удаления. Живут три дня. */
+const TRASH_KEY = 'nis:trash';
+const TRASH_TTL = 3 * 24 * 60 * 60 * 1000;
+const TRASH_MAX = 100;
+
+async function trashList() {
+  const cur = (await chrome.storage.local.get(TRASH_KEY))[TRASH_KEY] || [];
+  const edge = Date.now() - TRASH_TTL;
+  return cur.filter(r => r && r.at > edge && r.note);
+}
+
+async function putTrash(list) {
+  const next = list.slice(0, TRASH_MAX);
+  if (next.length) await chrome.storage.local.set({ [TRASH_KEY]: next });
+  else await chrome.storage.local.remove(TRASH_KEY);
+}
+
+async function toTrash(items) {
+  if (!items.length) return;
+  const now = Date.now();
+  const host = tab && /^https?:/i.test(tab.url || '') ? new URL(tab.url).hostname : '';
+  const recs = items.map(it => ({
+    id: it.note.id, at: now, key: it.key, scope: it.scope || 'page', host,
+    text: it.text || '(пустая заметка)', note: it.note
+  }));
+  const ids = new Set(recs.map(r => r.id));
+  await putTrash(recs.concat((await trashList()).filter(r => !ids.has(r.id))));
+}
+
+/* Возврат: заметке проставляется свежее время правки — иначе надгробие,
+   которое старше её последней правки, спрячет заметку сразу после возврата
+   (то же правило действует и при слиянии вкладок). */
+async function restoreFromTrash(rec) {
+  const res = await chrome.storage.local.get(rec.key);
+  const arr = Array.isArray(res[rec.key]) ? res[rec.key] : [];
+  if (!arr.some(n => n.id === rec.id)) {
+    arr.push(Object.assign({}, rec.note, { updatedAt: Date.now() }));
+    await chrome.storage.local.set({ [rec.key]: arr });
+  }
+  await unbury([rec.id]);
+  await putTrash((await trashList()).filter(r => r.id !== rec.id));
+  if (contentAlive) await ask({ type: 'nis:reload' });
+}
+
+function fmtWhen(ts) {
+  const min = Math.round((Date.now() - ts) / 60000);
+  if (min < 1) return 'только что';
+  if (min < 60) return min + ' мин назад';
+  const h = Math.round(min / 60);
+  if (h < 24) return h + ' ч назад';
+  return Math.round(h / 24) + ' дн назад';
+}
+
+async function renderTrash() {
+  const list = await trashList();
+  $('trash-card').hidden = !list.length;
+  $('trash-cnt').textContent = String(list.length);
+  const ul = $('trash');
+  ul.textContent = '';
+  const here = tab && /^https?:/i.test(tab.url || '') ? new URL(tab.url).hostname : '';
+
+  for (const rec of list) {
+    const li = document.createElement('li');
+
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.background = (rec.note && rec.note.bg) || '#fff59d';
+
+    const txt = document.createElement('span');
+    txt.className = 'txt';
+    txt.textContent = rec.text;
+    txt.title = (rec.host && rec.host !== here ? rec.host + ' · ' : '') + fmtWhen(rec.at);
+
+    const when = document.createElement('span');
+    when.className = 'tag';
+    when.textContent = rec.host && rec.host !== here ? rec.host : fmtWhen(rec.at);
+
+    const back = document.createElement('button');
+    back.className = 'del back';
+    back.textContent = '⟲';
+    back.title = 'Вернуть заметку';
+    back.addEventListener('click', async e => {
+      e.stopPropagation();
+      await restoreFromTrash(rec);
+      await renderTrash();
+      await updateTotals();
+      renderList(await notesFromStorage());
+    });
+
+    li.append(dot, txt, when, back);
+    ul.appendChild(li);
+  }
 }
 
 /* ---------- настройки ---------- */
@@ -377,12 +477,18 @@ function wireUI() {
     if (!confirm('Удалить все заметки этой страницы (включая заметки всего сайта)?')) return;
     const k = keysFor(tab.url);
     const got = await chrome.storage.local.get([k.page, k.site]);
-    const ids = [].concat(got[k.page] || [], got[k.site] || []).map(n => n.id).filter(Boolean);
+    const strip = html => String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70);
+    const items = []
+      .concat((got[k.page] || []).map(n => ({ note: n, key: k.page, scope: 'page' })))
+      .concat((got[k.site] || []).map(n => ({ note: n, key: k.site, scope: 'site' })))
+      .map(it => Object.assign(it, { text: strip(it.note.html) || '(пустая заметка)' }));
     await chrome.storage.local.remove([k.page, k.site]);
-    await bury(ids);
+    await bury(items.map(it => it.note.id).filter(Boolean));
+    await toTrash(items);            // самая опасная кнопка в окне — из корзины её можно отыграть
     if (contentAlive) await ask({ type: 'nis:reload' });
     renderList([]);
     updateTotals();
+    renderTrash();
   });
 }
 

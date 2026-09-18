@@ -24,6 +24,17 @@ const STORE = {
   ],
   'nis:site:http://localhost:8777': [
     { id: 'b1', html: 'Общая для сайта', bg: '#cfe3ff', x: 20, y: 200 }
+  ],
+  // корзина: удалённые заметки живут три дня, отсюда их возвращают кнопкой ⟲
+  'nis:trash': [
+    { id: 'c1', at: Date.now() - 20 * 60 * 1000,
+      key: 'nis:page:http://localhost:8777/test/sandbox.html', scope: 'page',
+      host: 'localhost', text: 'Удалил по ошибке',
+      note: { id: 'c1', html: 'Удалил по ошибке', bg: '#ffd9c9', x: 60, y: 140, updatedAt: Date.now() - 20 * 60 * 1000 } },
+    { id: 'c2', at: Date.now() - 26 * 60 * 60 * 1000,
+      key: 'nis:page:http://example.org/article', scope: 'page',
+      host: 'example.org', text: 'Удалена вчера на другом сайте',
+      note: { id: 'c2', html: 'Удалена вчера на другом сайте', bg: '#d9f2d9', x: 10, y: 10, updatedAt: Date.now() - 26 * 60 * 60 * 1000 } }
   ]
 };
 window.chrome = {

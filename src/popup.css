@@ -76,6 +76,8 @@ details[open].card summary.card-title { margin-bottom: 8px; }
   font-size: 13px; padding: 2px 4px; border-radius: 5px;
 }
 .del:hover { background: #fde7e8; color: #c0353a; }
+.del.back { font-size: 15px; }
+.del.back:hover { background: #e4f1e6; color: #2c7a3d; }   /* возврат — не опасное действие */
 .empty { font-size: 12px; color: #868d9c; padding: 4px 2px; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 9px; }

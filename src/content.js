@@ -7,6 +7,9 @@
   const SETTINGS_KEY = 'nis:settings';
   const TOMB_KEY = 'nis:tombstones';        // id удалённых заметок, чтобы слияние их не воскрешало
   const TOMB_TTL = 30 * 24 * 60 * 60 * 1000;
+  const TRASH_KEY = 'nis:trash';            // сами удалённые заметки — на случай промаха
+  const TRASH_TTL = 3 * 24 * 60 * 60 * 1000;
+  const TRASH_MAX = 100;
   const DEFAULTS = {
     enabled: true,
     disabledSites: [],
@@ -974,7 +977,8 @@
       setTimeout(() => body.focus(), 0);
     } else {
       commitBody(n, el);
-      if (!previewText(n) && !body.querySelector('a')) removeNote(n.id);   // пустую заметку не храним
+      // пустую заметку не храним; предлагать вернуть пустоту незачем — убираем молча
+      if (!previewText(n) && !body.querySelector('a')) removeNote(n.id, true);
     }
   }
 
@@ -1013,16 +1017,76 @@
     scheduleSave();
   }
 
-  function removeNote(id) {
+  function removeNote(id, silent) {
     const i = notes.findIndex(n => n.id === id);
     if (i < 0) return;
-    pickFromFlow(notes[i]);           // убираем распорку — текст сходится обратно
+    const gone = notes[i];
+    pickFromFlow(gone);               // убираем распорку — текст сходится обратно
     tombs[id] = Date.now();           // надгробие: слияние не вернёт заметку из чужой памяти
     notes.splice(i, 1);
+    if (!silent) {
+      toTrash(gone);
+      undoToast('Заметка удалена', 'Вернуть', () => restoreNote(gone));
+    }
     const el = els.get(id);
     if (el) el.remove();
     els.delete(id);
     saveAll();
+  }
+
+  /* ---------------- корзина ----------------
+     Диалог «вы уверены?» спрашивали на каждом удалении, а от промаха он всё равно
+     не спасал: подтвердить не глядя проще, чем заметить ошибку. Поэтому удаляем
+     сразу, но даём вернуть — восемь секунд кнопкой в сообщении, а дальше три дня
+     из корзины в окне расширения. */
+  async function trashList() {
+    try { return (await chrome.storage.local.get(TRASH_KEY))[TRASH_KEY] || []; }
+    catch (e) { return []; }
+  }
+
+  async function putTrash(list) {
+    const edge = Date.now() - TRASH_TTL;
+    const next = list.filter(r => r && r.at > edge).slice(0, TRASH_MAX);
+    try {
+      if (next.length) await chrome.storage.local.set({ [TRASH_KEY]: next });
+      else await chrome.storage.local.remove(TRASH_KEY);
+    } catch (e) { /* корзина не критична: сообщение с «Вернуть» уже показано */ }
+  }
+
+  async function toTrash(n) {
+    const rec = {
+      id: n.id,
+      at: Date.now(),
+      key: (n.scope === 'site') ? siteKey() : pageKey(),
+      scope: n.scope || 'page',
+      host: location.hostname,
+      text: previewText(n) || '(пустая заметка)',
+      note: Object.assign({}, n)
+    };
+    delete rec.note.scope;
+    const cur = await trashList();
+    await putTrash([rec].concat(cur.filter(r => r.id !== n.id)));
+  }
+
+  async function dropTrash(id) {
+    const cur = await trashList();
+    if (cur.some(r => r.id === id)) await putTrash(cur.filter(r => r.id !== id));
+  }
+
+  /* Возврат из корзины. Надгробие в хранилище к этому моменту уже записано, и просто
+     забыть его в памяти мало — слияние в saveAll() прочитает его обратно. Поэтому
+     заметке проставляется свежее время правки: надгробие старше правки заметку
+     не прячет, и та же отметка делает её главной при слиянии с другими вкладками. */
+  function restoreNote(n) {
+    if (notes.some(x => x.id === n.id)) return;
+    delete tombs[n.id];
+    const copy = Object.assign({}, n, { updatedAt: Date.now() });
+    notes.push(copy);
+    zTop = Math.max(zTop, copy.z || 0);
+    if (visible()) renderNote(copy);
+    saveAll();
+    dropTrash(copy.id);
+    toast('Заметка возвращена');
   }
 
   function wire(n, el) {
@@ -1193,10 +1257,8 @@
   function handleAction(act, n, el) {
     switch (act) {
       case 'collapse': toggleCollapse(n, el); break;
-      case 'del':
-        if (!previewText(n)) { removeNote(n.id); break; }
-        askConfirm('Удалить заметку?', previewText(n)).then(yes => { if (yes) removeNote(n.id); });
-        break;
+      // без «вы уверены?»: удаляем сразу и предлагаем вернуть — см. removeNote()
+      case 'del': removeNote(n.id, !previewText(n)); break;
       case 'pin': {
         const r = el.getBoundingClientRect();
         if (!n.fixed) {
@@ -1775,43 +1837,22 @@
     return t;
   }
 
-  /* собственное подтверждение: window.confirm сайт может переопределить */
-  function askConfirm(title, text) {
+  /* Сообщение с действием: «Заметка удалена · Вернуть». Живёт дольше обычного —
+     за 2,7 секунды кнопку не успеть заметить, а решение тут нужно осознанное. */
+  function undoToast(text, label, action) {
     ensureHost();
-    return new Promise(resolve => {
-      const dlg = document.createElement('div');
-      dlg.className = 'nis-modal';
-      const box = document.createElement('div');
-      box.className = 'nis-modal-box';
-      const h = document.createElement('div');
-      h.className = 'nis-modal-title';
-      h.textContent = title;
-      const p = document.createElement('div');
-      p.className = 'nis-confirm-text';
-      p.textContent = text || '';
-      const actions = document.createElement('div');
-      actions.className = 'nis-modal-actions';
-      const no = document.createElement('button');
-      no.className = 'nis-b2';
-      no.textContent = 'Отмена';
-      const yes = document.createElement('button');
-      yes.className = 'nis-b2 nis-primary';
-      yes.textContent = 'Удалить';
-      actions.append(no, yes);
-      box.append(h, p, actions);
-      dlg.appendChild(box);
-      shadow.appendChild(dlg);
-      const done = v => { dlg.remove(); resolve(v); };
-      no.addEventListener('click', () => done(false));
-      yes.addEventListener('click', () => done(true));
-      dlg.addEventListener('click', e => { if (e.target === dlg) done(false); });
-      dlg.addEventListener('keydown', e => {
-        e.stopPropagation();
-        if (e.key === 'Escape') done(false);
-        if (e.key === 'Enter') done(true);
-      });
-      setTimeout(() => yes.focus(), 0);
-    });
+    const t = document.createElement('div');
+    t.className = 'nis-toast nis-toast-undo';
+    const span = document.createElement('span');
+    span.textContent = text;
+    const b = document.createElement('button');
+    b.className = 'nis-undo';
+    b.textContent = label;
+    t.append(span, b);
+    shadow.appendChild(t);
+    const timer = setTimeout(() => t.remove(), 8000);
+    b.addEventListener('click', () => { clearTimeout(timer); t.remove(); action(); });
+    return t;
   }
 
   function focusNote(id) {

@@ -203,10 +203,6 @@ var NIS_CSS = `
 .nis-row label { flex: 1 1 auto; }
 .nis-check { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px; color: #4b5261; }
 .nis-check input { width: 14px; height: 14px; }
-.nis-confirm-text {
-  margin: -4px 0 10px; font-size: 13px; color: #4b5261;
-  max-height: 60px; overflow: hidden;
-}
 .nis-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .nis-b2 {
   all: unset; padding: 6px 14px; border-radius: 7px; cursor: pointer;
@@ -235,4 +231,15 @@ var NIS_CSS = `
   animation: none; opacity: 1;
 }
 .nis-toast.nis-toast-err:hover { background: #7a1813; }
+
+/* «Заметка удалена · Вернуть» — сообщение с действием вместо диалога «вы уверены?» */
+.nis-toast.nis-toast-undo {
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px;
+  animation: none; opacity: 1;
+}
+.nis-undo {
+  all: unset; padding: 5px 12px; border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,.16); color: #fff; font: 600 13px/1 system-ui, Arial, sans-serif;
+}
+.nis-undo:hover { background: rgba(255,255,255,.28); }
 `;
